@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+
+[ "$#" -gt 0 ] || exit 1
+
+keyword="$1"
+echo keyword is $keyword
+
+SHARED_DB=$HOME/.local/share/sioyek/shared.db
+LOCAL_DB=$HOME/.local/share/sioyek/local.db
+
+QUERY="
+SELECT document_path as bk_path, desc as bk_desc FROM bookmarks WHERE bk_desc LIKE '%$keyword%'
+UNION
+SELECT document_path as hi_path, desc as hi_desc FROM highlights WHERE hi_desc LIKE '%$keyword%'
+GROUP BY document_path;
+"
+
+result=$(sqlite3 $SHARED_DB "$QUERY")
+echo "$result"
+
