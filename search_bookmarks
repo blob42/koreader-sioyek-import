@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
+#TODO: make in rust
 
 [ "$#" -gt 0 ] || exit 1
 
 keyword="$1"
-echo keyword is $keyword
 
 SHARED_DB=$HOME/.local/share/sioyek/shared.db
 LOCAL_DB=$HOME/.local/share/sioyek/local.db
@@ -15,6 +15,23 @@ SELECT document_path as hi_path, desc as hi_desc FROM highlights WHERE hi_desc L
 GROUP BY document_path;
 "
 
-result=$(sqlite3 $SHARED_DB "$QUERY")
-echo "$result"
+QUERY="
+ATTACH \"$LOCAL_DB\" as local;
+ SELECT document_hash.path , desc FROM 
+ (SELECT document_path as _hash, bookmarks.desc FROM bookmarks
+ UNION
+ SELECT document_path as _hash , highlights.desc FROM highlights)
+ INNER JOIN document_hash ON _hash = document_hash.hash 
+"
+results="$(sqlite3  $SHARED_DB "$QUERY")"
 
+basenames="$(echo "$results" | awk '{FS="|"; print $1 }' | xargs -I '{}' basename '{}')"
+lookup_terms="$(echo "$results" | awk '{FS="|"; print $2}') "
+
+echo "$basenames" "$lookup_terms"
+
+
+# IFS="\n"
+# for line in "$results" ; do
+#    echo "$line" | awk "{IFS=\"|\"; print $2 }"
+# done
